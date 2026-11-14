@@ -35,19 +35,24 @@ Preprocessing + leave-one-out split
 ```
 
 ## 📊 Dataset
-**MovieLens ml-latest-small** — 100,836 ratings, 9,742 movies, 610 users, plus genres and tags.
-Download: https://files.grouplens.org/datasets/ml-latest-small.zip
+**MovieLens ml-latest-small** — 100,836 ratings, 9,742 movies, 610 users, plus genres & tags.
 
-Per GroupLens terms, the data is **not redistributed in this repo**. To fetch it:
-1. Download the zip above and extract into `data/ml-latest-small/`, **or**
-2. Run:
-   ```bash
-   curl -O https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
-   unzip ml-latest-small.zip -d data/
-   ```
+Per GroupLens terms, the data is **not redistributed in this repo**. Fetch it with:
 
-Citation: Harper, F. M., & Konstan, J. A. (2015). *The MovieLens Datasets: History and
-Context.* ACM Transactions on Interactive Intelligent Systems, 5(4).
+**Recommended (works on Windows / macOS / Linux / Colab):**
+```bash
+python data/download.py
+```
+
+**Manual fallback:** download
+https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+and extract into `data/ml-latest-small/`.
+If GroupLens is unreachable, use the official Kaggle mirror: `grouplens/movielens-latest-small`.
+
+**Verify after extraction:** `ratings.csv` 100,836 rows · `movies.csv` 9,742 · `tags.csv` 3,683 · `links.csv` 9,742.
+
+Citation: Harper, F. M., & Konstan, J. A. (2015). *The MovieLens Datasets: History and Context.*
+ACM Transactions on Interactive Intelligent Systems, 5(4).
 
 ## 📁 Repository Structure
 ```
