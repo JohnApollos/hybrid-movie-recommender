@@ -94,7 +94,7 @@ a held-out item is *relevant* if its rating ≥ 4.0. RMSE uses an 80/20 random r
 
 **Option B — local:**
 ```bash
-git clone https://github.com/<your-org>/hybrid-movie-recommender.git
+git clone https://github.com/JohnApollos/hybrid-movie-recommender.git
 cd hybrid-movie-recommender
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
