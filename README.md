@@ -42,7 +42,7 @@ Per GroupLens terms, the data is **not redistributed in this repo**. To fetch it
 1. Download the zip above and extract into `data/ml-latest-small/`, **or**
 2. Run:
    ```bash
-   curl -O https://files.grouplens.org/datasets/ml-latest-small.zip
+   curl -O https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
    unzip ml-latest-small.zip -d data/
    ```
 
