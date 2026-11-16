@@ -58,6 +58,7 @@ def evaluate_all_models(
 
     print(f"Loading ground-truth test split from: {test_path}")
     test_df = pd.read_csv(test_path)
+    test_df = test_df[test_df["rating"] >= 4.0]   # README: relevant only if rating >= 4.0
 
     # Every row in test_loo.csv is the held-out relevant movie for that userId
     ground_truth = test_df.groupby("userId")["movieId"].apply(set).to_dict()
@@ -103,6 +104,14 @@ def evaluate_all_models(
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(save_path, index=False)
+    contract = pd.DataFrame({
+        "model": results_df["Model"],
+        f"precision_at_{k}": results_df[f"P@{k}"],
+        f"recall_at_{k}": results_df[f"R@{k}"],
+        f"ndcg_at_{k}": results_df[f"NDCG@{k}"],
+        "rmse": pd.to_numeric(results_df["RMSE"], errors="coerce"),
+    })
+    contract.to_csv(os.path.join(outputs_dir, "metrics.csv"), index=False)
     print("=== Final Evaluation Results ===")
     print(results_df.to_string(index=False))
     print(f"\nSaved results to: {save_path}")
