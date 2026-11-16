@@ -1,0 +1,14 @@
+model,vs,recall_diff,diff_ci_low,diff_ci_high,relative_lift,only_model_hits,only_vs_hits,mcnemar_p
+random,popularity,-0.0634,-0.0882,-0.0386,-1.0,0,23,0.0
+user_cf,popularity,0.0275,0.0028,0.0551,0.4348,17,7,0.0639
+item_cf,popularity,0.0028,-0.0331,0.0386,0.0435,22,21,1.0
+svd,popularity,-0.0248,-0.0551,0.0055,-0.3913,11,20,0.1496
+content,popularity,-0.0468,-0.0771,-0.0193,-0.7391,6,23,0.0023
+hybrid,popularity,0.0331,0.0055,0.0634,0.5217,21,9,0.0428
+ncf,popularity,0.011,-0.0165,0.0386,0.1739,15,11,0.5572
+hybrid,random,0.0964,0.0689,0.1295,,35,0,0.0
+hybrid,user_cf,0.0055,-0.011,0.022,0.0606,6,4,0.7539
+hybrid,item_cf,0.0303,0.0028,0.0606,0.4583,20,9,0.0614
+hybrid,svd,0.0579,0.0248,0.0909,1.5,29,8,0.0008
+hybrid,content,0.0799,0.0468,0.1129,4.8333,35,6,0.0
+hybrid,ncf,0.022,-0.0138,0.0579,0.2963,25,17,0.28

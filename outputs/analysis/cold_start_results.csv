@@ -1,0 +1,8 @@
+scenario,description,hits,hit_rate_at_10
+popularity,No information - most-rated movies,11,0.0303
+genres,3 favourite genres - content (shipped),4,0.011
+genre_popularity,3 favourite genres - most-rated in genre (alternative),14,0.0386
+liked_1,1 liked movie - content (shipped),7,0.0193
+liked_3,3 liked movies - content (shipped),12,0.0331
+liked_5,5 liked movies - content (shipped),9,0.0248
+warm_hybrid,Full history - hybrid (reference),35,0.0964
