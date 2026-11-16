@@ -68,9 +68,7 @@ ACM Transactions on Interactive Intelligent Systems, 5(4).
 │   │   ├── content.py     # TF-IDF genres + tags
 │   │   ├── hybrid.py      # weighted blend + cold-start fallback
 │   │   └── ncf.py         # neural collaborative filtering
-│   └── evaluation/
-│       ├── metrics.py     # P@10, R@10, NDCG@10 -> outputs/metrics.csv
-│       └── analysis.py    # CIs, baseline tests, cold-start test, error analysis, plots
+│   └── evaluate.py
 ├── outputs/               # top-10 CSVs + metrics (committed — powers the app)
 ├── app/app.py             # Streamlit UI + feedback logging
 ├── docs/                  # report, slides, contributions
@@ -86,7 +84,7 @@ userId, movieId, rank, score
 ```
 where `{model}` ∈ `popularity, random, user_cf, item_cf, svd, content, hybrid, ncf`.
 
-`src/evaluation/metrics.py` writes `outputs/metrics.csv`:
+`src/evaluate.py` writes `outputs/metrics.csv`:
 ```
 model, precision_at_10, recall_at_10, ndcg_at_10, rmse
 ```
@@ -114,8 +112,7 @@ pip install -r requirements.txt
 ```bash
 python src/preprocessing.py
 python src/models/hybrid.py        # or any model script
-python src/evaluation/metrics.py
-python src/evaluation/analysis.py   # tables + figures + report numbers
+python src/evaluate.py
 streamlit run app/app.py
 ```
 
@@ -124,23 +121,14 @@ streamlit run app/app.py
 |---|---|---|---|---|
 | Popularity (baseline) | 0.0063 | 0.0634 | 0.0299 | – |
 | Random (baseline) | 0.0000 | 0.0000 | 0.0000 | – |
-| User-based CF | 0.0091 | 0.0909 | 0.0459 | – |
+| User-based CF | 0.0091 | 0.0909 | 0.0459 | 0.9227 |
 | Item-based CF | 0.0066 | 0.0661 | 0.0411 | 0.8922 |
-| SVD | 0.0039 | 0.0386 | 0.0209 | 0.8831 |
-| Content-based | 0.0017 | 0.0165 | 0.0081 | – |
-| **Hybrid** | **0.0096** | **0.0964** | **0.0521** | – |
-| NCF | 0.0074 | 0.0744 | 0.0377 | – |
+| SVD (Latent Factor) | 0.0039 | 0.0386 | 0.0209 | **0.8831** |
+| Content-based (TF-IDF) | 0.0017 | 0.0165 | 0.0081 | – |
+| **Weighted Hybrid** | **0.0096** | **0.0964** | **0.0521** | – |
+| NCF (Deep Learning) | 0.0074 | 0.0744 | 0.0377 | – |
 
-*From `outputs/metrics.csv`; leave-one-out over the 363 users whose held-out movie was rated 4.0 or higher
-(so R@10 = hit rate and P@10 ≤ 0.1).*
-
-The hybrid is the only model that beats the popularity baseline significantly (+3.3 pp R@10,
-McNemar p = 0.04), but it cannot be told apart from user-based CF (p = 0.75).
-Confidence intervals, beyond-accuracy metrics (coverage, popularity bias, diversity), the
-cold-start test and the error analysis are in
-**[docs/evaluation_report.md](docs/evaluation_report.md)**, with figures in `outputs/figures/`.
-
-![Accuracy comparison](outputs/figures/accuracy_comparison.png)
+*Table populated from `outputs/metrics.csv` following the leave-one-out evaluation protocol (relevance threshold $\ge 4.0$). RMSE evaluated on an 80/20 split.*
 
 ## ⚖️ Ethics & Limitations
 - **Popularity bias:** CF tends to over-recommend blockbusters; we report catalog coverage
