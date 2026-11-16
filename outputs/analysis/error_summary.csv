@@ -1,0 +1,12 @@
+,value
+users_evaluated,363.0
+held_out_items_unseen_in_train,12.0
+held_out_items_with_le5_train_ratings,50.0
+median_train_ratings_of_held_out_item,42.0
+hybrid_hits,35.0
+users_hit_by_any_blend_component,60.0
+users_hit_by_any_model_incl_ncf,78.0
+hybrid_misses_hit_by_some_component,41.0
+users_missed_by_every_model,285.0
+median_train_ratings_of_items_hybrid_hits,170.0
+median_train_ratings_of_items_hybrid_misses,37.5
