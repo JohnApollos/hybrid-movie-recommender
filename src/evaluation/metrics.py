@@ -1,7 +1,10 @@
-import glob
-import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[2]
+MODELS = ["popularity", "random", "user_cf", "item_cf", "svd", "content", "hybrid", "ncf"]
 
 
 def precision_at_k(recommended: list, relevant: set, k: int = 10) -> float:
@@ -34,10 +37,10 @@ def ndcg_at_k(recommended: list, relevant: set, k: int = 10) -> float:
     return dcg / idcg if idcg > 0 else 0.0
 
 
-def load_saved_rmse(outputs_dir: str = "outputs") -> dict:
+def load_saved_rmse(outputs_dir: Path) -> dict:
     """Load precomputed RMSE files like outputs/rmse_svd.csv and outputs/rmse_item_cf.csv."""
     rmse_map = {}
-    for path in glob.glob(os.path.join(outputs_dir, "rmse_*.csv")):
+    for path in outputs_dir.glob("rmse_*.csv"):
         df = pd.read_csv(path)
         if "model" in df.columns and "rmse" in df.columns:
             for _, row in df.iterrows():
@@ -47,17 +50,21 @@ def load_saved_rmse(outputs_dir: str = "outputs") -> dict:
 
 def evaluate_all_models(
     k: int = 10,
-    test_path: str = "data/splits/test_loo.csv",
-    outputs_dir: str = "outputs",
-    save_path: str = "outputs/evaluation_results.csv",
+    test_path: Path = ROOT / "data" / "splits" / "test_loo.csv",
+    outputs_dir: Path = ROOT / "outputs",
+    save_path: Path = ROOT / "outputs" / "evaluation_results.csv",
 ) -> pd.DataFrame:
-    if not os.path.exists(test_path):
+    test_path = Path(test_path)
+    outputs_dir = Path(outputs_dir)
+    save_path = Path(save_path)
+    if not test_path.exists():
         raise FileNotFoundError(
             f"Test split not found at '{test_path}'. Run 'python src/preprocessing.py' first."
         )
 
     print(f"Loading ground-truth test split from: {test_path}")
     test_df = pd.read_csv(test_path)
+    test_user_count = test_df["userId"].nunique()
     test_df = test_df[test_df["rating"] >= 4.0]   # README: relevant only if rating >= 4.0
 
     # Every row in test_loo.csv is the held-out relevant movie for that userId
@@ -66,20 +73,22 @@ def evaluate_all_models(
 
     rmse_lookup = load_saved_rmse(outputs_dir)
 
-    top10_files = sorted(glob.glob(os.path.join(outputs_dir, "*_top10.csv")))
-    if not top10_files:
-        raise FileNotFoundError(f"No *_top10.csv files found in '{outputs_dir}/'.")
-
     results = []
-    for file_path in top10_files:
-        base = os.path.splitext(os.path.basename(file_path))[0]
-        model_name = base.replace("_top10", "")
+    for model_name in MODELS:
+        file_path = outputs_dir / f"{model_name}_top10.csv"
+        if not file_path.exists():
+            raise FileNotFoundError(f"Recommendation output not found: '{file_path}'.")
         pred_df = pd.read_csv(file_path)
+        expected_columns = {"userId", "movieId", "rank", "score"}
+        if not expected_columns.issubset(pred_df.columns):
+            raise ValueError(
+                f"{file_path.name} must contain columns {sorted(expected_columns)}."
+            )
+        counts = pred_df.groupby("userId").size()
+        if len(counts) != test_user_count or not counts.eq(k).all():
+            raise ValueError(f"{file_path.name} must contain exactly {k} recommendations per test user.")
 
-        if "rank" in pred_df.columns:
-            pred_df = pred_df.sort_values(["userId", "rank"], ascending=[True, True])
-        elif "score" in pred_df.columns:
-            pred_df = pred_df.sort_values(["userId", "score"], ascending=[True, False])
+        pred_df = pred_df.sort_values(["userId", "rank"], ascending=[True, True])
 
         user_recs = pred_df.groupby("userId")["movieId"].apply(list).to_dict()
 
@@ -111,7 +120,7 @@ def evaluate_all_models(
         f"ndcg_at_{k}": results_df[f"NDCG@{k}"],
         "rmse": pd.to_numeric(results_df["RMSE"], errors="coerce"),
     })
-    contract.to_csv(os.path.join(outputs_dir, "metrics.csv"), index=False)
+    contract.to_csv(outputs_dir / "metrics.csv", index=False)
     print("=== Final Evaluation Results ===")
     print(results_df.to_string(index=False))
     print(f"\nSaved results to: {save_path}")
@@ -119,5 +128,4 @@ def evaluate_all_models(
 
 
 if __name__ == "__main__":
-    os.makedirs("src/evaluation", exist_ok=True)
     evaluate_all_models()
