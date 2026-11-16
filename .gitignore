@@ -5,3 +5,4 @@ __pycache__/
 *.pt
 *.ckpt
 feedback.csv
+.streamlit/secrets.toml
