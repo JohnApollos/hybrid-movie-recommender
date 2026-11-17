@@ -1,17 +1,15 @@
 ﻿from pathlib import Path
 import json
 import sys
-from datetime import datetime, timezone
 
 import pandas as pd
 import streamlit as st
+from feedback_store import save_feedback
 
 ROOT = Path(__file__).resolve().parents[1]
 MOVIES_PATH = ROOT / "data" / "ml-latest-small" / "movies.csv"
 RATINGS_PATH = ROOT / "data" / "ml-latest-small" / "ratings.csv"
 OUTPUTS_DIR = ROOT / "outputs"
-FEEDBACK_PATH = ROOT / "feedback.csv"
-FEEDBACK_COLUMNS = ["userId", "movieId", "feedback", "model", "timestamp"]
 
 
 def apply_cineverse_style(page_title: str, subtitle: str) -> None:
@@ -86,29 +84,6 @@ def load_content_features():
         return content.build_features(), content
     except (ImportError, OSError, ValueError):
         return (None, None, None), None
-
-
-def save_feedback(user_id: int, movie_id: int, rating: str, model_name: str) -> None:
-    record = {
-        "userId": user_id,
-        "movieId": movie_id,
-        "feedback": rating,
-        "model": model_name,
-        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
-    existing = pd.DataFrame(columns=FEEDBACK_COLUMNS)
-    if FEEDBACK_PATH.is_file():
-        existing = pd.read_csv(FEEDBACK_PATH)
-        for column in FEEDBACK_COLUMNS:
-            if column not in existing.columns:
-                existing[column] = ""
-        keep = ~(
-            (pd.to_numeric(existing["userId"], errors="coerce") == user_id)
-            & (pd.to_numeric(existing["movieId"], errors="coerce") == movie_id)
-            & (existing["model"].astype(str) == model_name)
-        )
-        existing = existing.loc[keep, FEEDBACK_COLUMNS]
-    pd.concat([existing, pd.DataFrame([record])], ignore_index=True).to_csv(FEEDBACK_PATH, index=False)
 
 
 def render_movie_cards(frame: pd.DataFrame, heading: str, score_label: str = "Score") -> None:

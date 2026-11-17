@@ -7,7 +7,6 @@ import json
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -20,13 +19,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from data.download import download_dataset
+from feedback_store import load_feedback, save_feedback
 
 
 OUTPUTS_DIR = ROOT / "outputs"
 MOVIES_PATH = ROOT / "data" / "ml-latest-small" / "movies.csv"
 LINKS_PATH = ROOT / "data" / "ml-latest-small" / "links.csv"
 RATINGS_PATH = ROOT / "data" / "ml-latest-small" / "ratings.csv"
-FEEDBACK_PATH = ROOT / "feedback.csv"
 
 MODEL_FILES = {
     "Hybrid": "hybrid_top10.csv",
@@ -39,7 +38,6 @@ MODEL_FILES = {
     "Random baseline": "random_top10.csv",
 }
 RECOMMENDATION_COLUMNS = ["userId", "movieId", "rank", "score"]
-FEEDBACK_COLUMNS = ["userId", "movieId", "feedback", "model", "timestamp"]
 
 
 @st.cache_resource(show_spinner=False)
@@ -153,53 +151,8 @@ def file_signature(path: Path) -> tuple[str, float, int]:
     return str(path), stat.st_mtime, stat.st_size
 
 
-def load_feedback() -> pd.DataFrame:
-    """Load saved votes, returning an empty table when no feedback exists yet."""
-    if not FEEDBACK_PATH.is_file():
-        return pd.DataFrame(columns=FEEDBACK_COLUMNS)
-    try:
-        feedback = pd.read_csv(FEEDBACK_PATH)
-    except (OSError, pd.errors.ParserError, UnicodeDecodeError):
-        return pd.DataFrame(columns=FEEDBACK_COLUMNS)
-    for column in FEEDBACK_COLUMNS:
-        if column not in feedback.columns:
-            feedback[column] = ""
-    feedback["userId"] = pd.to_numeric(feedback["userId"], errors="coerce")
-    feedback["movieId"] = pd.to_numeric(feedback["movieId"], errors="coerce")
-    feedback["feedback"] = feedback["feedback"].astype(str).str.lower()
-    return feedback.dropna(subset=["userId", "movieId"])[FEEDBACK_COLUMNS]
-
-
 def write_feedback(user_id: int, movie_id: int, rating: str, model_name: str) -> None:
-    """Save the user's latest feedback for this user, movie, and model."""
-    record = {
-        "userId": user_id,
-        "movieId": movie_id,
-        "feedback": rating,
-        "model": model_name,
-        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
-    try:
-        if FEEDBACK_PATH.exists():
-            old = pd.read_csv(FEEDBACK_PATH)
-            for column in FEEDBACK_COLUMNS:
-                if column not in old.columns:
-                    old[column] = ""
-            keep = ~(
-                (pd.to_numeric(old["userId"], errors="coerce") == user_id)
-                & (pd.to_numeric(old["movieId"], errors="coerce") == movie_id)
-                & (old["model"].astype(str) == model_name)
-            )
-            old = old.loc[keep, FEEDBACK_COLUMNS]
-        else:
-            old = pd.DataFrame(columns=FEEDBACK_COLUMNS)
-        updated = pd.concat([old, pd.DataFrame([record])], ignore_index=True)
-        updated.to_csv(FEEDBACK_PATH, index=False)
-    except (OSError, pd.errors.ParserError, UnicodeDecodeError) as exc:
-        st.session_state["feedback_error"] = f"Could not update feedback.csv: {exc}"
-        st.session_state.pop("feedback_notice", None)
-        return
-    st.session_state.pop("feedback_error", None)
+    save_feedback(user_id, movie_id, rating, model_name)
     st.session_state["feedback_notice"] = (rating, movie_id)
 
 
@@ -318,9 +271,6 @@ else:
     st.info("Movie titles are not installed yet. Run `python data/download.py` to download MovieLens metadata; recommendations are available below by movie ID.")
 
 notice = st.session_state.pop("feedback_notice", None)
-feedback_error = st.session_state.pop("feedback_error", None)
-if feedback_error:
-    st.error(feedback_error)
 if notice:
     rating, movie_id = notice
     st.success(f"Your {rating} was saved for movie {movie_id}.")
