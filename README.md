@@ -140,12 +140,11 @@ streamlit run app/app.py
 
 ### Deployment
 
-**Deployment URL:** Pending deployment. The app has been checked locally; add the public URL here
-after the approved pull request is merged and a hosted deployment is created.
+**Deployment URL:** [CineVerse on Streamlit Community Cloud](https://hybrid-movie-recommender-app.streamlit.app/).
 
-After deployment, verify the model and user selectors, all 10 recommendation cards, poster fallbacks,
-and a thumbs-up/down submission. Confirm `feedback.csv` uses the schema above and the summary updates.
-Then replace the pending status with the hosted URL.
+After the schema update is merged and redeployed, verify the model and user selectors, all 10
+recommendation cards, poster fallbacks, and a thumbs-up/down submission. Confirm `feedback.csv`
+uses the schema above and the summary updates.
 
 For poster artwork, configure `TMDB_READ_ACCESS_TOKEN` in `.streamlit/secrets.toml` using the
 untracked `.streamlit/secrets.toml.example` as a template. Never commit the secrets file.
