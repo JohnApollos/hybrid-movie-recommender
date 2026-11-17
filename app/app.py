@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import json
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html import escape
@@ -15,8 +16,12 @@ from urllib.request import Request, urlopen
 import pandas as pd
 import streamlit as st
 
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from data.download import download_dataset
+
+
 OUTPUTS_DIR = ROOT / "outputs"
 MOVIES_PATH = ROOT / "data" / "ml-latest-small" / "movies.csv"
 LINKS_PATH = ROOT / "data" / "ml-latest-small" / "links.csv"
@@ -35,6 +40,12 @@ MODEL_FILES = {
 }
 RECOMMENDATION_COLUMNS = ["userId", "movieId", "rank", "score"]
 FEEDBACK_COLUMNS = ["userId", "movieId", "feedback", "model", "timestamp"]
+
+
+@st.cache_resource(show_spinner=False)
+def ensure_movie_library() -> Path:
+    """Ensure deploys have the metadata needed for titles, genres, and posters."""
+    return download_dataset(ROOT / "data")
 
 
 @st.cache_data(show_spinner=False)
@@ -211,10 +222,26 @@ st.markdown(
       justify-content: center; border: 1px solid rgba(201,167,255,.18); border-radius: 14px;
       background: linear-gradient(145deg, #30264b, #171827 70%); color: #d5ad55; text-align: center;
       padding: .75rem; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    @media (max-width: 700px) {
+      [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: .75rem !important; }
+      [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        flex: 1 1 100% !important; min-width: 100% !important; width: 100% !important;
+      }
+      .hero { padding: 1rem 0 .75rem; }
+      .hero h1 { font-size: 2.35rem; }
+      .movie-card { min-height: 0; padding: 1rem; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+try:
+    with st.spinner("Preparing the MovieLens library..."):
+        ensure_movie_library()
+except (OSError, RuntimeError, ValueError) as exc:
+    st.error(f"MovieLens metadata could not be prepared: {exc}")
+    st.stop()
 
 st.markdown(
     '<div class="hero"><div class="eyebrow">CineVerse · MovieLens discovery</div>'

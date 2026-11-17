@@ -119,6 +119,23 @@ python src/evaluation/analysis.py   # tables + figures + report numbers
 streamlit run app/app.py
 ```
 
+### Streamlit deployment
+
+The app automatically downloads the MovieLens `ml-latest-small` metadata on first
+startup when `data/ml-latest-small/` is missing. This keeps the dataset out of Git
+while allowing deployed instances to show movie titles and genres.
+
+Posters are loaded from TMDB at runtime. Add the TMDB Read Access Token to
+Streamlit Cloud under **App Settings → Secrets**:
+
+```toml
+TMDB_READ_ACCESS_TOKEN = "your_token"
+```
+
+The same value can be stored locally in `.streamlit/secrets.toml`. Never commit
+that file or the token. Without the token, the app continues to work but displays
+the poster-unavailable placeholder.
+
 ## 📈 Results
 | Model | P@10 | R@10 | NDCG@10 | RMSE |
 |---|---|---|---|---|
