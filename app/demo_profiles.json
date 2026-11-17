@@ -1,0 +1,67 @@
+[
+  {
+    "id": "profile_1",
+    "name": "Alex Vance - The Sci-Fi & Cyberpunk Fan",
+    "bio": "Enjoys futuristic world-building, dystopian futures, mind-bending artificial intelligence, and epic space exploration.",
+    "target_genres": ["Sci-Fi", "Action", "Thriller"],
+    "seed_movie_ids": [2571, 260, 1196, 589],
+    "seed_movie_titles": [
+      "Matrix, The (1999)",
+      "Star Wars: Episode IV - A New Hope (1977)",
+      "Star Wars: Episode V - The Empire Strikes Back (1980)",
+      "Terminator 2: Judgment Day (1991)"
+    ]
+  },
+  {
+    "id": "profile_2",
+    "name": "Maya Patel - Animation & Family Adventurer",
+    "bio": "Loves heartwarming stories, hand-drawn and 3D animated masterpieces, musical scores, and wholesome adventures.",
+    "target_genres": ["Animation", "Children", "Adventure"],
+    "seed_movie_ids": [1, 364, 588, 595],
+    "seed_movie_titles": [
+      "Toy Story (1995)",
+      "Lion King, The (1994)",
+      "Aladdin (1992)",
+      "Beauty and the Beast (1991)"
+    ]
+  },
+  {
+    "id": "profile_3",
+    "name": "David Kim - Psychological Thriller & Crime Buff",
+    "bio": "Drawn to plot twists, moral ambiguity, neo-noir cinematography, forensic investigations, and deep character psychology.",
+    "target_genres": ["Crime", "Mystery", "Thriller"],
+    "seed_movie_ids": [47, 50, 296, 593],
+    "seed_movie_titles": [
+      "Seven (a.k.a. Se7en) (1995)",
+      "Usual Suspects, The (1995)",
+      "Pulp Fiction (1994)",
+      "Silence of the Lambs, The (1991)"
+    ]
+  },
+  {
+    "id": "profile_4",
+    "name": "Elena Rostova - Golden Age Drama & Historical Epics",
+    "bio": "Values poignant human storytelling, historical realism, wartime memoirs, and character-driven narratives.",
+    "target_genres": ["Drama", "War", "History"],
+    "seed_movie_ids": [318, 527, 110, 356],
+    "seed_movie_titles": [
+      "Shawshank Redemption, The (1994)",
+      "Schindler's List (1993)",
+      "Braveheart (1995)",
+      "Forrest Gump (1994)"
+    ]
+  },
+  {
+    "id": "profile_5",
+    "name": "Chloe Bennett - Romantic Comedy & Feel-Good Cinema",
+    "bio": "Craves witty dialogue, charming ensemble casts, romantic chemistry, and comforting feel-good cinema.",
+    "target_genres": ["Romance", "Comedy"],
+    "seed_movie_ids": [356, 239, 539, 39],
+    "seed_movie_titles": [
+      "Forrest Gump (1994)",
+      "Goofy Movie, A (1995)",
+      "Sleepless in Seattle (1993)",
+      "Clueless (1995)"
+    ]
+  }
+]

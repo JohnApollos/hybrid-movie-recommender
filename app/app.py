@@ -86,6 +86,12 @@ def load_user_ids(csv_path: str, modified_at: float, size: int) -> list[int]:
 
 
 @st.cache_data(show_spinner=False)
+def load_user_ratings(csv_path: str, modified_at: float, size: int) -> pd.DataFrame:
+    del modified_at, size
+    return pd.read_csv(csv_path, usecols=["userId", "movieId", "rating", "timestamp"])
+
+
+@st.cache_data(show_spinner=False)
 def load_tmdb_ids(csv_path: str, modified_at: float, size: int) -> pd.Series:
     """Map MovieLens movie IDs to TMDB IDs from MovieLens links.csv."""
     del modified_at, size
@@ -383,3 +389,69 @@ if not user_feedback.empty:
         hide_index=True,
         alt="Most recent movie feedback for the selected user",
     )
+
+if RATINGS_PATH.is_file() and MOVIES_PATH.is_file() and "movies" in locals() and not movies.empty:
+    try:
+        ratings = load_user_ratings(*file_signature(RATINGS_PATH))
+        profile_ratings = ratings.loc[ratings["userId"] == user_id].sort_values(
+            ["rating", "timestamp"], ascending=[False, False]
+        )
+        movie_lookup = (
+            movies.set_index("movieId")
+            if "movieId" in movies.columns
+            else movies
+        )
+        with st.expander(
+            f"Taste profile for user {user_id} "
+            f"({len(profile_ratings)} ratings, average {profile_ratings['rating'].mean():.2f})"
+        ):
+            genre_counts = (
+                profile_ratings.merge(movie_lookup[["genres"]], left_on="movieId", right_index=True)
+                ["genres"].fillna("").str.split("|").explode().value_counts().head(5)
+            )
+            profile_col, history_col = st.columns(2, gap="large")
+            with profile_col:
+                st.markdown("**Most-rated genres**")
+                st.dataframe(
+                    genre_counts.rename("Ratings").rename_axis("Genre").reset_index(),
+                    hide_index=True,
+                    width="stretch",
+                )
+            with history_col:
+                st.markdown("**Highest-rated movies**")
+                history = profile_ratings.head(5).copy()
+                history["Movie"] = history["movieId"].map(movie_lookup["title"]).fillna(
+                    "Movie " + history["movieId"].astype(int).astype(str)
+                )
+                st.dataframe(
+                    history[["Movie", "rating"]].rename(columns={"rating": "Rating"}),
+                    hide_index=True,
+                    width="stretch",
+                )
+    except (OSError, ValueError, pd.errors.ParserError) as exc:
+        st.warning(f"Taste profile could not be loaded: {exc}")
+
+with st.expander("Compare all recommendation models"):
+    comparison = []
+    title_lookup = movies["title"] if "movies" in locals() else pd.Series(dtype=str)
+    for label, path in available_models.items():
+        try:
+            model_frame = load_recommendations(*file_signature(path))
+            user_model = model_frame.loc[model_frame["userId"] == user_id].head(10)
+            row = {"Model": label}
+            for rank, movie_id in zip(user_model["rank"], user_model["movieId"]):
+                row[f"#{int(rank)}"] = title_lookup.get(int(movie_id), f"Movie {int(movie_id)}")
+            comparison.append(row)
+        except (OSError, ValueError, pd.errors.ParserError):
+            continue
+    if comparison:
+        rows = []
+        for item in comparison:
+            row = {"Model": item["Model"]}
+            for rank in range(1, 11):
+                row[f"#{rank}"] = "—"
+            row.update(item)
+            rows.append(row)
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    else:
+        st.info("No comparable model outputs are available for this user.")

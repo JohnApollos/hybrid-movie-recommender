@@ -1,0 +1,11 @@
+archetype,seed_type,seeds,top1_title,top1_genres,genre_hit_ratio_at_10
+Sci-Fi Fan,Genre Selection,Sci-Fi|Action,Barb Wire (1996),Action|Sci-Fi,1.0
+Sci-Fi Fan,Liked Movies,"[260, 1196, 2571]",Final Fantasy: The Spirits Within (2001),Adventure|Animation|Fantasy|Sci-Fi,1.0
+Romance & Comedy,Genre Selection,Romance|Comedy,Two if by Sea (1996),Comedy|Romance,1.0
+Romance & Comedy,Liked Movies,"[356, 239]","Emperor's New Groove 2: Kronk's New Groove, The (2005)",Animation|Children|Comedy|Romance,1.0
+Animation & Family,Genre Selection,Animation|Children,"Swan Princess, The (1994)",Animation|Children,1.0
+Animation & Family,Liked Movies,"[1, 364]","Bug's Life, A (1998)",Adventure|Animation|Children|Comedy,1.0
+Dark Crime & Thriller,Genre Selection,Crime|Thriller|Mystery,Dial M for Murder (1954),Crime|Mystery|Thriller,1.0
+Dark Crime & Thriller,Liked Movies,"[296, 50, 47]","Game, The (1997)",Drama|Mystery|Thriller,0.9
+Drama & History,Genre Selection,Drama|War,"Misérables, Les (1995)",Drama|War,1.0
+Drama & History,Liked Movies,"[318, 527, 110]","Pianist, The (2002)",Drama|War,0.8
