@@ -1,5 +1,6 @@
 pandas
 numpy<2
+certifi
 scikit-learn
 scikit-surprise
 torch
