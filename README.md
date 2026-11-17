@@ -95,6 +95,25 @@ The app and evaluation read **only these files** — never import another squad'
 **Evaluation protocol:** leave-one-out (each user's latest interaction held out);
 a held-out item is *relevant* if its rating ≥ 4.0. RMSE uses an 80/20 random rating split.
 
+### App feedback CSV
+
+The Streamlit app writes optional reactions to the git-ignored `feedback.csv` in the repository root.
+Its columns follow the app data dictionary:
+
+```text
+userId,movieId,reaction,title,notes
+```
+
+- `userId`: anonymous MovieLens profile ID.
+- `movieId`: MovieLens movie ID.
+- `reaction`: `up` or `down`.
+- `title`: MovieLens movie title.
+- `notes`: optional note of up to 250 characters; blank when no note is entered.
+
+A new reaction replaces the previous reaction for the same user and movie. The app can read older
+local logs that used `feedback`, `model`, and `timestamp`; it writes the documented columns when a
+new reaction is saved.
+
 ## 🚀 Getting Started
 **Option A — Google Colab (recommended, zero setup):** open a notebook from `notebooks/`,
 `pip install scikit-surprise`, mount Drive or clone this repo.
@@ -118,6 +137,18 @@ python src/evaluation/metrics.py
 python src/evaluation/analysis.py   # tables + figures + report numbers
 streamlit run app/app.py
 ```
+
+### Deployment
+
+**Deployment URL:** Pending deployment. The app has been checked locally; add the public URL here
+after the approved pull request is merged and a hosted deployment is created.
+
+After deployment, verify the model and user selectors, all 10 recommendation cards, poster fallbacks,
+and a thumbs-up/down submission. Confirm `feedback.csv` uses the schema above and the summary updates.
+Then replace the pending status with the hosted URL.
+
+For poster artwork, configure `TMDB_READ_ACCESS_TOKEN` in `.streamlit/secrets.toml` using the
+untracked `.streamlit/secrets.toml.example` as a template. Never commit the secrets file.
 
 ## 📈 Results
 | Model | P@10 | R@10 | NDCG@10 | RMSE |
@@ -148,7 +179,8 @@ cold-start test and the error analysis are in
 - **Filter bubbles:** the hybrid's content component can narrow exposure; diversity is
   measured, not assumed.
 - **Privacy:** MovieLens uses anonymized IDs; the app collects only optional 👍/👎 feedback
-  (logged to `feedback.csv` for future re-ranking) — no personal data.
+  and optional notes (logged to `feedback.csv` for future re-ranking). Do not enter personal or
+  identifying information in notes.
 - **Data license:** MovieLens is used under GroupLens' research terms and not redistributed.
 
 ## 👥 Team

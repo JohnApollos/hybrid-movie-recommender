@@ -6,7 +6,6 @@ import math
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -34,7 +33,7 @@ MODEL_FILES = {
     "Random baseline": "random_top10.csv",
 }
 RECOMMENDATION_COLUMNS = ["userId", "movieId", "rank", "score"]
-FEEDBACK_COLUMNS = ["userId", "movieId", "feedback", "model", "timestamp"]
+FEEDBACK_COLUMNS = ["userId", "movieId", "reaction", "title", "notes"]
 
 
 @st.cache_data(show_spinner=False)
@@ -137,45 +136,59 @@ def file_signature(path: Path) -> tuple[str, float, int]:
 
 
 def load_feedback() -> pd.DataFrame:
-    """Load saved votes, returning an empty table when no feedback exists yet."""
+    """Load feedback using the documented CSV schema, including older local logs."""
     if not FEEDBACK_PATH.is_file():
         return pd.DataFrame(columns=FEEDBACK_COLUMNS)
     try:
         feedback = pd.read_csv(FEEDBACK_PATH)
     except (OSError, pd.errors.ParserError, UnicodeDecodeError):
         return pd.DataFrame(columns=FEEDBACK_COLUMNS)
+    if "reaction" not in feedback.columns and "feedback" in feedback.columns:
+        feedback = feedback.rename(columns={"feedback": "reaction"})
     for column in FEEDBACK_COLUMNS:
         if column not in feedback.columns:
             feedback[column] = ""
     feedback["userId"] = pd.to_numeric(feedback["userId"], errors="coerce")
     feedback["movieId"] = pd.to_numeric(feedback["movieId"], errors="coerce")
-    feedback["feedback"] = feedback["feedback"].astype(str).str.lower()
-    return feedback.dropna(subset=["userId", "movieId"])[FEEDBACK_COLUMNS]
+    feedback["reaction"] = feedback["reaction"].fillna("").astype(str).str.lower()
+    feedback["title"] = feedback["title"].fillna("").astype(str).str.strip()
+    feedback["notes"] = feedback["notes"].fillna("").astype(str)
+    feedback = feedback.dropna(subset=["userId", "movieId"]).copy()
+    feedback["userId"] = feedback["userId"].astype(int)
+    feedback["movieId"] = feedback["movieId"].astype(int)
+
+    missing_titles = feedback["title"].eq("")
+    if missing_titles.any() and MOVIES_PATH.is_file():
+        try:
+            movie_titles = load_movies(*file_signature(MOVIES_PATH))["title"]
+            feedback.loc[missing_titles, "title"] = feedback.loc[missing_titles, "movieId"].map(movie_titles)
+        except (OSError, ValueError, pd.errors.ParserError):
+            pass
+    missing_titles = feedback["title"].isna() | feedback["title"].eq("")
+    feedback.loc[missing_titles, "title"] = "Movie " + feedback.loc[missing_titles, "movieId"].astype(str)
+    return feedback.drop_duplicates(["userId", "movieId"], keep="last")[FEEDBACK_COLUMNS]
 
 
-def write_feedback(user_id: int, movie_id: int, rating: str, model_name: str) -> None:
-    """Save the user's latest feedback for this user, movie, and model."""
+def write_feedback(user_id: int, movie_id: int, reaction: str, notes_key: str) -> None:
+    """Save or replace the user's reaction for a movie using the documented schema."""
+    title = f"Movie {movie_id}"
+    if MOVIES_PATH.is_file():
+        try:
+            movie_titles = load_movies(*file_signature(MOVIES_PATH))["title"]
+            title = str(movie_titles.get(movie_id, title))
+        except (OSError, ValueError, pd.errors.ParserError):
+            pass
     record = {
         "userId": user_id,
         "movieId": movie_id,
-        "feedback": rating,
-        "model": model_name,
-        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "reaction": reaction,
+        "title": title,
+        "notes": str(st.session_state.get(notes_key, "")).strip(),
     }
     try:
-        if FEEDBACK_PATH.exists():
-            old = pd.read_csv(FEEDBACK_PATH)
-            for column in FEEDBACK_COLUMNS:
-                if column not in old.columns:
-                    old[column] = ""
-            keep = ~(
-                (pd.to_numeric(old["userId"], errors="coerce") == user_id)
-                & (pd.to_numeric(old["movieId"], errors="coerce") == movie_id)
-                & (old["model"].astype(str) == model_name)
-            )
-            old = old.loc[keep, FEEDBACK_COLUMNS]
-        else:
-            old = pd.DataFrame(columns=FEEDBACK_COLUMNS)
+        old = load_feedback()
+        keep = ~((old["userId"] == user_id) & (old["movieId"] == movie_id))
+        old = old.loc[keep, FEEDBACK_COLUMNS]
         updated = pd.concat([old, pd.DataFrame([record])], ignore_index=True)
         updated.to_csv(FEEDBACK_PATH, index=False)
     except (OSError, pd.errors.ParserError, UnicodeDecodeError) as exc:
@@ -289,8 +302,8 @@ feedback_error = st.session_state.pop("feedback_error", None)
 if feedback_error:
     st.error(feedback_error)
 if notice:
-    rating, movie_id = notice
-    st.success(f"Your {rating} was saved for movie {movie_id}.")
+    reaction, movie_id = notice
+    st.success(f"Your {reaction} reaction was saved for movie {movie_id}.")
 
 st.markdown(f'<div class="eyebrow">{model_name}</div>', unsafe_allow_html=True)
 st.subheader(f"Top picks for user {user_id}")
@@ -328,6 +341,13 @@ else:
                         f'<div class="movie-meta">MovieLens ID {movie_id} · score {score_label}</div></div>',
                         unsafe_allow_html=True,
                     )
+                    notes_key = f"notes-{user_id}-{movie_id}"
+                    st.text_input(
+                        "Optional note",
+                        key=notes_key,
+                        max_chars=250,
+                        placeholder="Add a short note",
+                    )
                 up_col, down_col = st.columns(2)
                 with up_col:
                     st.button(
@@ -336,7 +356,7 @@ else:
                         key=f"like-{user_id}-{movie_id}-{model_name}",
                         width="stretch",
                         on_click=write_feedback,
-                        args=(int(user_id), movie_id, "up", model_name),
+                        args=(int(user_id), movie_id, "up", notes_key),
                     )
                 with down_col:
                     st.button(
@@ -345,11 +365,11 @@ else:
                         key=f"dislike-{user_id}-{movie_id}-{model_name}",
                         width="stretch",
                         on_click=write_feedback,
-                        args=(int(user_id), movie_id, "down", model_name),
+                        args=(int(user_id), movie_id, "down", notes_key),
                     )
 
 with st.expander("About, credits & feedback"):
-    st.write("Feedback is saved locally to `feedback.csv` with the anonymous user ID, movie ID, selected model, and timestamp. A new vote updates the previous vote for the same user, movie, and model.")
+    st.write("Feedback is saved locally to `feedback.csv` using the documented columns: `userId`, `movieId`, `reaction`, `title`, and `notes`. A new reaction replaces the previous one for the same user and movie.")
     if tmdb_token:
         st.image(
             "https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg",
@@ -362,8 +382,8 @@ with st.expander("About, credits & feedback"):
 
 feedback = load_feedback()
 user_feedback = feedback.loc[feedback["userId"] == user_id]
-likes = int((user_feedback["feedback"] == "up").sum())
-dislikes = int((user_feedback["feedback"] == "down").sum())
+likes = int((user_feedback["reaction"] == "up").sum())
+dislikes = int((user_feedback["reaction"] == "down").sum())
 
 st.subheader(f"Feedback summary for user {user_id}")
 st.caption("Current saved votes across all recommendation models.")
@@ -373,12 +393,10 @@ summary_columns[1].metric("Likes", likes, border=True)
 summary_columns[2].metric("Dislikes", dislikes, border=True)
 
 if not user_feedback.empty:
-    latest_feedback = user_feedback.sort_values("timestamp", ascending=False).head(5).copy()
-    latest_feedback["title"] = latest_feedback["movieId"].astype(int).map(movies["title"]) if "movies" in locals() else None
-    latest_feedback["title"] = latest_feedback["title"].fillna("Movie " + latest_feedback["movieId"].astype(int).astype(str))
+    latest_feedback = user_feedback.iloc[::-1].head(5).copy()
     st.dataframe(
-        latest_feedback[["title", "feedback", "model", "timestamp"]].rename(
-            columns={"title": "Movie", "feedback": "Vote", "model": "Model", "timestamp": "Saved at"}
+        latest_feedback[["title", "reaction", "notes"]].rename(
+            columns={"title": "Movie", "reaction": "Reaction", "notes": "Notes"}
         ),
         hide_index=True,
         alt="Most recent movie feedback for the selected user",
