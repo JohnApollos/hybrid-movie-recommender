@@ -16,7 +16,9 @@ as an interactive Streamlit web app.
 - **NCF** — neural collaborative filtering (PyTorch)
 - **Cold-start fallback** — new users get content-based recommendations from a stated profile
 - **Evaluation suite** — Precision@10, Recall@10, NDCG@10 (+ RMSE for rating predictors) vs. popularity/random baselines
-- **Web app** — Streamlit UI with 👍/👎 feedback logging
+- **Web app** — CineVerse-branded, responsive multipage Streamlit UI with poster cards,
+  cold-start profiles, model comparison, benchmarks, ethics/privacy, architecture, and
+  👍/👎 feedback logging
 
 ## 🏗 Architecture
 ```
@@ -70,7 +72,10 @@ ACM Transactions on Interactive Intelligent Systems, 5(4).
 │   │   └── ncf.py         # neural collaborative filtering
 │   └── evaluate.py
 ├── outputs/               # top-10 CSVs + metrics (committed — powers the app)
-├── app/app.py             # Streamlit UI + feedback logging
+├── app/app.py             # CineVerse home page + recommendations
+├── app/pages/              # Cold-start, benchmarks, ethics, and architecture pages
+├── app/page_common.py      # Shared CineVerse page components and styling
+├── app/feedback_store.py   # Google Sheets feedback with local CSV fallback
 ├── docs/                  # report, slides, contributions
 └── requirements.txt
 ```
@@ -116,6 +121,62 @@ python src/evaluate.py
 streamlit run app/app.py
 ```
 
+### Streamlit deployment
+
+The app automatically downloads the MovieLens `ml-latest-small` metadata on first
+startup when `data/ml-latest-small/` is missing. This keeps the dataset out of Git
+while allowing deployed instances to show movie titles and genres.
+
+Posters are loaded from TMDB at runtime. Add the TMDB Read Access Token to
+Streamlit Cloud under **App Settings → Secrets**:
+
+```toml
+TMDB_READ_ACCESS_TOKEN = "your_token"
+```
+
+The same value can be stored locally in `.streamlit/secrets.toml`. Never commit
+that file or the token. Without the token, the app continues to work but displays
+the poster-unavailable placeholder.
+
+#### Feedback persistence with Google Sheets
+
+For deployed feedback persistence, create a Google Cloud service account, enable
+the Google Sheets API, and share the spreadsheet with the service account's
+`client_email` as an editor. Create a worksheet/tab named `feedback` with this
+header row:
+
+```text
+userId,movieId,feedback,model,timestamp
+```
+
+Add the following to Streamlit Cloud Secrets, using the complete values from the
+downloaded service-account JSON file:
+
+```toml
+GOOGLE_SHEET_ID = "your_spreadsheet_id"
+
+[gcp_service_account]
+type = "service_account"
+project_id = "your-project-id"
+private_key_id = "your-key-id"
+private_key = '''-----BEGIN PRIVATE KEY-----
+your complete private key
+-----END PRIVATE KEY-----
+'''
+client_email = "your-service-account@your-project.iam.gserviceaccount.com"
+client_id = "your-client-id"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
+auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+client_x509_cert_url = "your-client-certificate-url"
+universe_domain = "googleapis.com"
+```
+
+The app replaces an existing vote for the same `userId`, `movieId`, and model.
+If Google Sheets is not configured or temporarily unavailable, local development
+falls back to `feedback.csv` (which is gitignored). Never commit service-account
+credentials or Streamlit secrets.
+
 ## 📈 Results
 | Model | P@10 | R@10 | NDCG@10 | RMSE |
 |---|---|---|---|---|
@@ -136,7 +197,7 @@ streamlit run app/app.py
 - **Filter bubbles:** the hybrid's content component can narrow exposure; diversity is
   measured, not assumed.
 - **Privacy:** MovieLens uses anonymized IDs; the app collects only optional 👍/👎 feedback
-  (logged to `feedback.csv` for future re-ranking) — no personal data.
+  (stored in Google Sheets when configured, otherwise `feedback.csv`) — no personal data.
 - **Data license:** MovieLens is used under GroupLens' research terms and not redistributed.
 
 ## 👥 Team
