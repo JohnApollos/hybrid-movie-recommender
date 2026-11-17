@@ -324,7 +324,7 @@ else:
                 poster_url = poster_urls.get(int(tmdb_id)) if pd.notna(tmdb_id) else None
                 with poster_col:
                     if poster_url:
-                        st.image(poster_url, alt=f"Movie poster for {title}", width="stretch")
+                        st.image(poster_url, width="stretch")
                     else:
                         st.markdown('<div class="poster-placeholder">Poster<br>unavailable</div>', unsafe_allow_html=True)
                 with details_col:
@@ -359,7 +359,6 @@ with st.expander("About, credits & feedback"):
     if tmdb_token:
         st.image(
             "https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg",
-            alt="The Movie Database logo",
             width=56,
         )
         st.caption("This product uses the TMDB API but is not endorsed or certified by TMDB.")
