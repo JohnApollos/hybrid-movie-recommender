@@ -192,6 +192,7 @@ credentials or Streamlit secrets.
 *Table populated from `outputs/metrics.csv` following the leave-one-out evaluation protocol (relevance threshold $\ge 4.0$). RMSE evaluated on an 80/20 split.*
 
 ## ⚖️ Ethics & Limitations
+
 - **Popularity bias:** CF tends to over-recommend blockbusters; we report catalog coverage
   alongside accuracy.
 - **Filter bubbles:** the hybrid's content component can narrow exposure; diversity is
