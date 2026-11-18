@@ -8,6 +8,7 @@ as an interactive Streamlit web app.
 > Recommender Systems Practical Study — group project, BSc Data Science & Analytics, JKUAT.
 
 ## ✨ Features
+
 - **User-based CF** — recommendations from similar users' tastes
 - **Item-based CF** — recommendations from similar items
 - **SVD** — latent-factor rating prediction
