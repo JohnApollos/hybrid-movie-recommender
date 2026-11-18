@@ -10,4 +10,4 @@ seaborn
 jupyter
 gspread
 google-auth
-pyarrow<21
+pyarrow==18.1.0

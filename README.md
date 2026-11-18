@@ -123,6 +123,11 @@ streamlit run app/app.py
 
 ### Streamlit deployment
 
+The app is designed for Python 3.13. Streamlit Community Cloud reads the
+repository's `.python-version` file and will use Python 3.13 instead of an
+untested newer runtime. Pinning PyArrow to `18.1.0` keeps it compatible with
+the project's `numpy<2` constraint.
+
 The app automatically downloads the MovieLens `ml-latest-small` metadata on first
 startup when `data/ml-latest-small/` is missing. This keeps the dataset out of Git
 while allowing deployed instances to show movie titles and genres.
